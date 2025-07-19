@@ -1,0 +1,205 @@
+version: "3.8"
+
+services:
+  adservice:
+    build: ./adservice
+    ports:
+      - "9555:9555"
+    networks:
+      - backend_net
+    volumes:
+      - ./logs/adservice:/app/logs
+    restart: unless-stopped
+
+  cartservice:
+    build: ./cartservice/src
+    ports:
+      - "7070:7070"
+    networks:
+      - backend_net
+    volumes:
+      - ./logs/cartservice:/app/logs
+    restart: unless-stopped
+
+  checkoutservice:
+    build: ./checkoutservice
+    ports:
+      - "5050:5050"
+    networks:
+      - backend_net
+    environment:
+      SHIPPING_SERVICE_ADDR: ${SHIPPING_SERVICE_ADDR}
+      PAYMENT_SERVICE_ADDR: ${PAYMENT_SERVICE_ADDR}
+      EMAIL_SERVICE_ADDR: ${EMAIL_SERVICE_ADDR}
+      CART_SERVICE_ADDR: ${CART_SERVICE_ADDR}
+      CURRENCY_SERVICE_ADDR: ${CURRENCY_SERVICE_ADDR}
+      PRODUCT_CATALOG_SERVICE_ADDR: ${PRODUCT_CATALOG_SERVICE_ADDR}
+      DISABLE_PROFILER: ${DISABLE_PROFILER}
+      DISABLE_TRACING: ${DISABLE_TRACING}
+    depends_on:
+      - shippingservice
+      - paymentservice
+      - emailservice
+      - cartservice
+      - currencyservice
+      - productcatalogservice
+    volumes:
+      - ./logs/checkoutservice:/app/logs
+    restart: unless-stopped
+
+  currencyservice:
+    build: ./currencyservice
+    ports:
+      - "7000:7000"
+    networks:
+      - backend_net
+    environment:
+      PORT: 7000
+      DISABLE_PROFILER: ${DISABLE_PROFILER}
+      DISABLE_TRACING: ${DISABLE_TRACING}
+    volumes:
+      - ./logs/currencyservice:/app/logs
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "7000"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  emailservice:
+    build: ./emailservice
+    ports:
+      - "8080:8080"
+    networks:
+      - backend_net
+    environment:
+      PORT: 8080
+      DISABLE_PROFILER: ${DISABLE_PROFILER}
+      DISABLE_TRACING: ${DISABLE_TRACING}
+    volumes:
+      - ./logs/emailservice:/app/logs
+    restart: unless-stopped
+
+  loadgenerator:
+    build: ./loadgenerator
+    networks:
+      - backend_net
+    environment:
+      FRONTEND_ADDR: frontend:8080
+      USERS: 20
+      RATE: 2
+    depends_on:
+      - frontend
+    volumes:
+      - ./logs/loadgenerator:/app/logs
+    restart: unless-stopped
+
+  paymentservice:
+    build: ./paymentservice
+    ports:
+      - "50051:50051"
+    networks:
+      - backend_net
+    environment:
+      PORT: 50051
+      DISABLE_PROFILER: ${DISABLE_PROFILER}
+      DISABLE_TRACING: ${DISABLE_TRACING}
+    volumes:
+      - ./logs/paymentservice:/app/logs
+    restart: unless-stopped
+
+  productcatalogservice:
+    build: ./productcatalogservice
+    ports:
+      - "3550:3550"
+    networks:
+      - backend_net
+    volumes:
+      - ./logs/productcatalogservice:/app/logs
+    restart: unless-stopped
+
+  recommendationservice:
+    build: ./recommendationservice
+    ports:
+      - "8081:8081"
+    networks:
+      - backend_net
+    environment:
+      PRODUCT_CATALOG_SERVICE_ADDR: ${PRODUCT_CATALOG_SERVICE_ADDR}
+      DISABLE_PROFILER: ${DISABLE_PROFILER}
+      DISABLE_TRACING: ${DISABLE_TRACING}
+    depends_on:
+      - productcatalogservice
+    volumes:
+      - ./logs/recommendationservice:/app/logs
+    restart: unless-stopped
+
+  shippingservice:
+    build: ./shippingservice
+    ports:
+      - "50052:50051"
+    networks:
+      - backend_net
+    environment:
+      DISABLE_PROFILER: ${DISABLE_PROFILER}
+      DISABLE_TRACING: ${DISABLE_TRACING}
+    volumes:
+      - ./logs/shippingservice:/app/logs
+    restart: unless-stopped
+
+  shoppingassistantservice:
+    build: ./shoppingassistantservice
+    ports:
+      - "8082:8082"
+    networks:
+      - backend_net
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+    volumes:
+      - ./logs/shoppingassistantservice:/app/logs
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8089:8080"
+    volumes:
+      - ./frontend:/app
+      - ./logs/frontend:/app/logs
+    command: ["go", "run", "main.go"]
+    networks:
+      - backend_net
+      - frontend_net
+    environment:
+      PRODUCT_CATALOG_SERVICE_ADDR: ${PRODUCT_CATALOG_SERVICE_ADDR}
+      AD_SERVICE_ADDR: adservice:9555
+      CART_SERVICE_ADDR: ${CART_SERVICE_ADDR}
+      EMAIL_SERVICE_ADDR: ${EMAIL_SERVICE_ADDR}
+      SHIPPING_SERVICE_ADDR: ${SHIPPING_SERVICE_ADDR}
+      RECOMMENDATION_SERVICE_ADDR: ${RECOMMENDATION_SERVICE_ADDR}
+      CURRENCY_SERVICE_ADDR: ${CURRENCY_SERVICE_ADDR}
+      PAYMENT_SERVICE_ADDR: ${PAYMENT_SERVICE_ADDR}
+      CHECKOUT_SERVICE_ADDR: ${CHECKOUT_SERVICE_ADDR}
+      SHOPPING_ASSISTANT_SERVICE_ADDR: ${SHOPPING_ASSISTANT_SERVICE_ADDR}
+      DISABLE_PROFILER: ${DISABLE_PROFILER}
+      DISABLE_TRACING: ${DISABLE_TRACING}
+    depends_on:
+      - adservice
+      - cartservice
+      - checkoutservice
+      - currencyservice
+      - emailservice
+      - paymentservice
+      - productcatalogservice
+      - recommendationservice
+      - shippingservice
+      - shoppingassistantservice
+    restart: unless-stopped
+
+networks:
+  frontend_net:
+  backend_net:

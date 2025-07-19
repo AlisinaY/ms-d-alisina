@@ -1,0 +1,8 @@
+flask==3.1.1
+langchain==0.3.26
+pillow==11.3.0
+boto3
+psycopg2-binary
+langchain-openai
+openai
+
