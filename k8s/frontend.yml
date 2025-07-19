@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: microservices-demo
+
+---
+# ============================
+# Frontend Deployment
+# ============================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: microservices-demo
+spec:
+  replicas: 2 # Start mit 2 Pods (HPA passt das später an)
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: 610351333224.dkr.ecr.eu-central-1.amazonaws.com/frontend:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m" # Mindest-CPU, damit HPA arbeiten kann
+              memory: "128Mi"
+            limits:
+              cpu: "500m" # Max-CPU pro Pod
+              memory: "512Mi"
+          env:
+            - name: PRODUCT_CATALOG_SERVICE_ADDR
+              value: productcatalogservice:80
+            - name: AD_SERVICE_ADDR
+              value: adservice:80
+            - name: CART_SERVICE_ADDR
+              value: cartservice:80
+            - name: EMAIL_SERVICE_ADDR
+              value: emailservice:80
+            - name: SHIPPING_SERVICE_ADDR
+              value: shippingservice:80
+            - name: RECOMMENDATION_SERVICE_ADDR
+              value: recommendationservice:80
+            - name: CURRENCY_SERVICE_ADDR
+              value: currencyservice:80
+            - name: PAYMENT_SERVICE_ADDR
+              value: paymentservice:80
+            - name: CHECKOUT_SERVICE_ADDR
+              value: checkoutservice:80
+            - name: SHOPPING_ASSISTANT_SERVICE_ADDR
+              value: shoppingassistantservice:80
+            - name: DISABLE_PROFILER
+              value: "true"
+            - name: DISABLE_TRACING
+              value: "true"
+
+---
+# ============================
+# Frontend Service
+# ============================
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: microservices-demo
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer
+
+---
+# ============================
+# Horizontal Pod Autoscaler
+# ============================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+  namespace: microservices-demo
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50

@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: microservices-demo
+---
+# Productcatalogservice
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productcatalogservice
+  namespace: microservices-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: productcatalogservice
+  template:
+    metadata:
+      labels:
+        app: productcatalogservice
+    spec:
+      containers:
+        - name: productcatalogservice
+          image: 610351333224.dkr.ecr.eu-central-1.amazonaws.com/productcatalogservice:latest
+          ports:
+            - containerPort: 3550
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: productcatalogservice
+  namespace: microservices-demo
+spec:
+  selector:
+    app: productcatalogservice
+  ports:
+    - port: 80
+      targetPort: 3550
+  type: ClusterIP

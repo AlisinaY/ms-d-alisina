@@ -150,7 +150,7 @@ pipeline {
                 kubectl --kubeconfig=$KUBECONFIG get nodes
 
                 # Deploy manifests
-                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/microservices-demo.yml
+                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/
             '''
         }
     }

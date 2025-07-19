@@ -8,6 +8,7 @@
 .terraform.lock.hcl
 .terraform/*
 .venv/
+.env/
 .vs/
 .vscode/
 *.iml
