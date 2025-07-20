@@ -1,0 +1,23 @@
+externalSecrets:
+  name: shoppingassistant-secrets
+  namespace: microservices-demo
+  refreshInterval: 1h
+  secretStore:
+    name: aws-secretsmanager
+    kind: SecretStore
+  target:
+    name: shoppingassistant-secrets
+    creationPolicy: Owner
+  data:
+    - secretKey: DB_HOST
+      remoteRef:
+        key: microservices-demo/app-secrets
+        property: DB_HOST
+    - secretKey: DB_PASSWORD
+      remoteRef:
+        key: microservices-demo/app-secrets
+        property: DB_PASSWORD
+    - secretKey: OPENAI_API_KEY
+      remoteRef:
+        key: microservices-demo/app-secrets
+        property: OPENAI_API_KEY

@@ -4,7 +4,7 @@ metadata:
   name: microservices-demo
 
 ---
-# Shoppingassistantservice
+# Shoppingassistantservice Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,17 +26,29 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            - name: OPENAI_API_KEY
-              value: "sk-xxx" # Replace with your real key
             - name: DB_HOST
-              value: shopping-assistant-db.czcmm4esc0mr.eu-central-1.rds.amazonaws.com
-            - name: DB_NAME
-              value: shoppingdb
+              valueFrom:
+                secretKeyRef:
+                  name: shoppingassistant-secrets
+                  key: DB_HOST
             - name: DB_USER
-              value: postgres
-            - name: DB_PASS
-              value: MySecurePass123!
+              valueFrom:
+                secretKeyRef:
+                  name: shoppingassistant-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: shoppingassistant-secrets
+                  key: DB_PASSWORD
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: shoppingassistant-secrets
+                  key: OPENAI_API_KEY
+
 ---
+# Shoppingassistantservice Service
 apiVersion: v1
 kind: Service
 metadata:
