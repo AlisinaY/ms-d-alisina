@@ -1,15 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "microservices-demo.fullname" . }}
-  labels:
-    {{- include "microservices-demo.labels" . | nindent 4 }}
+  name: shoppingassistantservice
+  namespace: { { .Values.namespace } }
 spec:
-  type: {{ .Values.service.type }}
-  ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
   selector:
-    {{- include "microservices-demo.selectorLabels" . | nindent 4 }}
+    app: shoppingassistantservice
+  ports:
+    - port: { { .Values.service.port } }
+      targetPort: { { .Values.service.targetPort } }
+  type: { { .Values.service.type } }
