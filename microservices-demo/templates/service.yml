@@ -6,6 +6,6 @@ spec:
   selector:
     app: shoppingassistantservice
   ports:
-    - port: { { .Values.service.port } }
-      targetPort: { { .Values.service.targetPort } }
-  type: { { .Values.service.type } }
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+  type: {{ .Values.service.type }}
