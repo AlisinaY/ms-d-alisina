@@ -2,6 +2,9 @@ provider "aws" {
   region = var.aws_region
 }
 
+# --------------------------------------------
+# EKS CLUSTER
+# --------------------------------------------
 resource "aws_eks_cluster" "my_eks" {
   name     = var.cluster_name
   role_arn = aws_iam_role.eks_cluster_role.arn
@@ -15,7 +18,6 @@ resource "aws_eks_cluster" "my_eks" {
     aws_iam_role_policy_attachment.eks_cluster_AmazonEKSVPCResourceController,
   ]
 }
-
 
 resource "aws_iam_role" "eks_cluster_role" {
   name = "eksClusterRole"
@@ -42,13 +44,14 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSVPCResourceContr
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
 }
 
-# Optional: Node Group
+# --------------------------------------------
+# NODE GROUP
+# --------------------------------------------
 resource "aws_eks_node_group" "node_group" {
   cluster_name    = aws_eks_cluster.my_eks.name
   node_group_name = "eks-node-group"
   node_role_arn   = aws_iam_role.eks_node_role.arn
   subnet_ids      = module.vpc.public_subnets
-
 
   scaling_config {
     desired_size = 2
@@ -93,7 +96,9 @@ resource "aws_iam_role_policy_attachment" "eks_worker_AmazonEC2ContainerRegistry
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-# VPC + Subnets
+# --------------------------------------------
+# VPC MODULE
+# --------------------------------------------
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.0.0"
@@ -107,34 +112,50 @@ module "vpc" {
 
   enable_nat_gateway       = true
   single_nat_gateway       = true
-  map_public_ip_on_launch  = true # <--- das ist wichtig
+  map_public_ip_on_launch  = true # wichtig für Public-Subnets
 
   tags = {
     Name = "eks-vpc"
   }
 }
 
-resource "aws_iam_role" "external_secrets_role" {
-  name = "eks-external-secrets-role"
-  assume_role_policy = data.aws_iam_policy_document.external_secrets_trust.json
+# --------------------------------------------
+# OIDC PROVIDER FOR IRSA
+# --------------------------------------------
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.my_eks.identity[0].oidc[0].issuer
 }
 
-data "aws_iam_policy_document" "external_secrets_trust" {
-  statement {
-    effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["eks.amazonaws.com"]
-    }
-    actions = ["sts:AssumeRole"]
-  }
+resource "aws_iam_openid_connect_provider" "eks" {
+  url             = aws_eks_cluster.my_eks.identity[0].oidc[0].issuer
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+}
+
+# --------------------------------------------
+# EXTERNAL SECRETS IAM ROLE WITH FULL ACCESS
+# --------------------------------------------
+resource "aws_iam_role" "external_secrets_role" {
+  name = "eks-external-secrets-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.eks.arn
+      }
+      Condition = {
+        StringEquals = {
+          "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:external-secrets:external-secrets-sa"
+        }
+      }
+    }]
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "external_secrets_access" {
   role       = aws_iam_role.external_secrets_role.name
-  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # Vollzugriff auf Secrets Manager
 }
-
-
-
-
