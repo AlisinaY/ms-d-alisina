@@ -155,7 +155,7 @@ fi
                         kubectl --kubeconfig=$KUBECONFIG get nodes
 
                         # Helm deploy
-                        helm upgrade --install $HELM_RELEASE ./helm-chart \
+                        helm upgrade --install $HELM_RELEASE ./charts \
                             --namespace $NAMESPACE \
                             --create-namespace \
                             --kubeconfig $KUBECONFIG
