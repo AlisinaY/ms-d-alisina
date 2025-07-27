@@ -1,5 +1,5 @@
 resource "aws_secretsmanager_secret" "app_secrets" {
-  name        = "microservices-demo/app-secretss"
+  name        = "microservices-demo/app-secrets"
   description = "Sensitive credentials for microservices-demo"
 }
 

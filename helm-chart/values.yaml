@@ -1,0 +1,213 @@
+namespace: microservices-demo
+imageRepoPrefix: 610351333224.dkr.ecr.eu-central-1.amazonaws.com/
+
+services:
+  shoppingassistant:
+    replicaCount: 2
+    image:
+      name: shoppingassistantservice
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 8080
+    secretName: app-secrets
+    env:
+      - name: DB_HOST
+        valueFrom:
+          secretKeyRef:
+            name: app-secrets
+            key: DB_HOST
+      - name: DB_USER
+        valueFrom:
+          secretKeyRef:
+            name: app-secrets
+            key: DB_USER
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: app-secrets
+            key: DB_PASSWORD
+      - name: OPENAI_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: app-secrets
+            key: OPENAI_API_KEY
+
+  cartservice:
+    replicaCount: 2
+    image:
+      repository: cartservice
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 7070
+    env:
+      - name: DISABLE_PROFILER
+        value: "true"
+      - name: DISABLE_TRACING
+        value: "true"
+
+  adservice:
+    replicaCount: 1
+    image:
+      repository: adservice
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 9555
+    env:
+      - name: DISABLE_PROFILER
+        value: "true"
+      - name: DISABLE_TRACING
+        value: "true"
+
+  checkoutservice:
+    replicaCount: 1
+    image:
+      repository: checkoutservice
+      tag: latest
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 5050
+    env:
+      - name: SHIPPING_SERVICE_ADDR
+        value: shippingservice:80
+      - name: PAYMENT_SERVICE_ADDR
+        value: paymentservice:80
+      - name: EMAIL_SERVICE_ADDR
+        value: emailservice:80
+      - name: CART_SERVICE_ADDR
+        value: cartservice:80
+      - name: CURRENCY_SERVICE_ADDR
+        value: currencyservice:80
+      - name: PRODUCT_CATALOG_SERVICE_ADDR
+        value: productcatalogservice:80
+      - name: DISABLE_PROFILER
+        value: "true"
+      - name: DISABLE_TRACING
+        value: "true"
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: loadbalancer
+    port: 80
+    targetPort: 8080
+  env:
+    - name: PRODUCT_CATALOG_SERVICE_ADDR
+      value: productcatalogservice:80
+    - name: AD_SERVICE_ADDR
+      value: adservice:80
+    - name: CART_SERVICE_ADDR
+      value: cartservice:80
+    - name: EMAIL_SERVICE_ADDR
+      value: emailservice:80
+    - name: SHIPPING_SERVICE_ADDR
+      value: shippingservice:80
+    - name: RECOMMENDATION_SERVICE_ADDR
+      value: recommendationservice:80
+    - name: CURRENCY_SERVICE_ADDR
+      value: currencyservice:80
+    - name: PAYMENT_SERVICE_ADDR
+      value: paymentservice:80
+    - name: CHECKOUT_SERVICE_ADDR
+      value: checkoutservice:80
+    - name: SHOPPING_ASSISTANT_SERVICE_ADDR
+      value: shoppingassistantservice:80
+    - name: DISABLE_PROFILER
+      value: "true"
+    - name: DISABLE_TRACING
+      value: "true"
+
+loadgenerator:
+  replicaCount: 1
+  image:
+    repository: loadgenerator
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+  env:
+    - name: FRONTEND_ADDR
+      value: frontend:80
+    - name: USERS
+      value: "20"
+    - name: RATE
+      value: "2"
+
+paymentservice:
+  replicaCount: 1
+  image:
+    repository: paymentservice
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 50051
+  env:
+    - name: PORT
+      value: "50051"
+    - name: DISABLE_PROFILER
+      value: "true"
+    - name: DISABLE_TRACING
+      value: "true"
+
+productcatalogservice:
+  replicaCount: 1
+  image:
+    repository: productcatalogservice
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3550
+
+recommendationservice:
+  replicaCount: 1
+  image:
+    repository: recommendationservice
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8081
+  env:
+    - name: PRODUCT_CATALOG_SERVICE_ADDR
+      value: productcatalogservice:80
+    - name: DISABLE_PROFILER
+      value: "true"
+    - name: DISABLE_TRACING
+      value: "true"
+
+shippingservice:
+  replicaCount: 1
+  image:
+    repository: shippingservice
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 50051
+  env:
+    - name: DISABLE_PROFILER
+      value: "true"
+    - name: DISABLE_TRACING
+      value: "true"

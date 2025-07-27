@@ -1,0 +1,60 @@
+{{- range $name, $svc := .Values.services }}
+
+---
+
+# -------------------------------
+# Deployment: {{ $name }}
+# -------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  replicas: {{ $svc.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      containers:
+        - name: {{ $name }}
+          image: "{{ $.Values.imageRepoPrefix }}{{ $svc.image.name | default $svc.image.repository }}:{{ $svc.image.tag }}"
+          imagePullPolicy: {{ $svc.image.pullPolicy }}
+          ports:
+            - containerPort: {{ $svc.service.targetPort }}
+          {{- if $svc.env }}
+          env:
+            {{- range $env := $svc.env }}
+            - name: {{ $env.name }}
+              {{- if $env.value }}
+              value: {{ $env.value | quote }}
+              {{- else if $env.valueFrom }}
+              valueFrom:
+                {{- toYaml $env.valueFrom | nindent 16 }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+
+---
+
+# -------------------------------
+# Service: {{ $name }}
+# -------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  selector:
+    app: {{ $name }}
+  ports:
+    - port: {{ $svc.service.port }}
+      targetPort: {{ $svc.service.targetPort }}
+  type: {{ $svc.service.type }}
+
+{{- end }}
