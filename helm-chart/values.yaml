@@ -38,7 +38,7 @@ services:
   cartservice:
     replicaCount: 2
     image:
-      repository: cartservice
+      name: cartservice
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -54,7 +54,7 @@ services:
   emailservice:
     replicaCount: 2
     image:
-      repository: emailservice
+      name: emailservice
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -72,7 +72,7 @@ services:
   currencyservice:
     replicaCount: 2
     image:
-      repository: currencyservice
+      name: currencyservice
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -90,7 +90,7 @@ services:
   adservice:
     replicaCount: 1
     image:
-      repository: adservice
+      name: adservice
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -106,7 +106,7 @@ services:
   checkoutservice:
     replicaCount: 1
     image:
-      repository: checkoutservice
+      name: checkoutservice
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -134,7 +134,7 @@ services:
   frontend:
     replicaCount: 1
     image:
-      repository: frontend
+      name: frontend
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -170,7 +170,7 @@ services:
   loadgenerator:
     replicaCount: 1
     image:
-      repository: loadgenerator
+      name: loadgenerator
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -188,7 +188,7 @@ services:
   paymentservice:
     replicaCount: 1
     image:
-      repository: paymentservice
+      name: paymentservice
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -206,7 +206,7 @@ services:
   productcatalogservice:
     replicaCount: 1
     image:
-      repository: productcatalogservice
+      name: productcatalogservice
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -217,7 +217,7 @@ services:
   recommendationservice:
     replicaCount: 1
     image:
-      repository: recommendationservice
+      name: recommendationservice
       tag: latest
       pullPolicy: IfNotPresent
     service:
@@ -235,7 +235,7 @@ services:
   shippingservice:
     replicaCount: 1
     image:
-      repository: shippingservice
+      name: shippingservice
       tag: latest
       pullPolicy: IfNotPresent
     service:
