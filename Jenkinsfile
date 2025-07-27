@@ -131,13 +131,12 @@ pipeline {
                         export AWS_DEFAULT_REGION=$AWS_REGION
 
                         # Install kubectl if not present
-if ! command -v kubectl >/dev/null 2>&1; then
-    echo "Installing kubectl..."
-    curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-    chmod +x kubectl
-    mv kubectl /usr/local/bin/
-fi
-
+                        if ! command -v kubectl >/dev/null 2>&1; then
+                        echo "Installing kubectl..."
+                        curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                        chmod +x kubectl
+                        mv kubectl /usr/local/bin/
+                        fi
 
                         # Install helm if not present
                         if ! command -v helm >/dev/null 2>&1; then
