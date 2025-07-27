@@ -55,7 +55,6 @@ pipeline {
                 dir("src/cartservice/src") {
                     script {
                         echo "Tests ausführen für CartService..."
-                        // Tests ausführen
                         docker.image('mcr.microsoft.com/dotnet/sdk:9.0').inside {
                             sh '''
                                 dotnet restore
@@ -109,52 +108,58 @@ pipeline {
         }
 
         // ============================
-        // 4️⃣ Deploy to EKS
+        // 4️⃣ Deploy to EKS with Helm
         // ============================
-        stage("Deploy to EKS") {
-    environment {
-        AWS_REGION = "eu-central-1"
-        CLUSTER_NAME = "my-eks-cluster"
-        KUBECONFIG = "${WORKSPACE}/kubeconfig" // Workspace-spezifische kubeconfig
-    }
-    steps {
-        withCredentials([usernamePassword(
-            credentialsId: 'aws-creds',
-            usernameVariable: 'AWS_ACCESS_KEY_ID',
-            passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-        )]) {
-            sh '''
-                set -eux
+        stage("Deploy to EKS with Helm") {
+            environment {
+                CLUSTER_NAME = "my-eks-cluster"
+                KUBECONFIG   = "${WORKSPACE}/kubeconfig"
+                HELM_RELEASE = "microservices-demo"
+                NAMESPACE    = "microservices-demo"
+            }
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-creds',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    sh '''
+                        set -eux
 
-                # Configure AWS CLI
-                export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                export AWS_DEFAULT_REGION=$AWS_REGION
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=$AWS_REGION
 
-                # Check if kubectl is installed
-                if ! command -v kubectl >/dev/null 2>&1; then
-                    echo "Installing kubectl..."
-                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                    chmod +x kubectl
-                    mv kubectl /usr/local/bin/
-                fi
+                        # Install kubectl if not present
+                        if ! command -v kubectl >/dev/null 2>&1; then
+                            curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                            chmod +x kubectl
+                            mv kubectl /usr/local/bin/
+                        fi
 
-                # Update kubeconfig
-                aws eks update-kubeconfig \
-                    --region $AWS_DEFAULT_REGION \
-                    --name $CLUSTER_NAME \
-                    --alias $CLUSTER_NAME \
-                    --kubeconfig $KUBECONFIG
+                        # Install helm if not present
+                        if ! command -v helm >/dev/null 2>&1; then
+                            curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+                        fi
 
-                # Test cluster access
-                kubectl --kubeconfig=$KUBECONFIG get nodes
+                        # Configure kubeconfig
+                        aws eks update-kubeconfig \
+                            --region $AWS_DEFAULT_REGION \
+                            --name $CLUSTER_NAME \
+                            --alias $CLUSTER_NAME \
+                            --kubeconfig $KUBECONFIG
 
-                # Deploy manifests
-                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/
-            '''
+                        # Test connection
+                        kubectl --kubeconfig=$KUBECONFIG get nodes
+
+                        # Helm deploy
+                        helm upgrade --install $HELM_RELEASE ./helm-chart \
+                            --namespace $NAMESPACE \
+                            --create-namespace \
+                            --kubeconfig $KUBECONFIG
+                    '''
+                }
+            }
         }
-    }
-}
-
     }
 }
