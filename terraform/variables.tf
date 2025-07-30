@@ -5,7 +5,7 @@ variable "aws_region" {
 
 variable "cluster_name" {
   description = "EKS Cluster Name"
-  default     = "my-eks-cluster"
+  default     = "msdemo-dev-eks"
 }
 
 # --- Database ---
