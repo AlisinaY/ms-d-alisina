@@ -154,7 +154,7 @@ pipeline {
                         kubectl --kubeconfig=$KUBECONFIG get nodes
 
                         # Helm deploy
-                        helm install $HELM_RELEASE ./charts \
+                        helm upgrade $HELM_RELEASE ./charts \
                             --namespace $NAMESPACE \
                             --create-namespace \
                             --kubeconfig $KUBECONFIG
