@@ -8,6 +8,24 @@ variable "cluster_name" {
   default     = "msdemo-dev-eks"
 }
 
+# --- ECR Repositories --- 
+variable "ecr_repositories" {
+  default = [
+    "adservice",
+    "cartservice",
+    "checkoutservice",
+    "currencyservice",
+    "emailservice",
+    "frontend",
+    "loadgenerator",
+    "paymentservice",
+    "productcatalogservice",
+    "recommendationservice",
+    "shippingservice",
+    "shoppingassistantservice"
+  ]  
+}
+
 # --- Database ---
 variable "db_host" {
   description = "Postgres DB Host"

@@ -2,6 +2,22 @@ provider "aws" {
   region = var.aws_region
 }
 
+# -------------------------------------------
+# ECR Repository
+# -------------------------------------------
+resource "aws_ecr_repository" "msdemo_dev_ecr" {
+
+  for_each = toset(var.ecr_repositories)
+
+  name = each.key
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+  tags = {
+    environment = "dev"
+  }
+}
+
 # --------------------------------------------
 # EKS CLUSTER
 # --------------------------------------------
