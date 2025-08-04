@@ -112,7 +112,7 @@ pipeline {
         // ============================
         stage("Deploy to EKS with Helm") {
             environment {
-                CLUSTER_NAME = "my-eks-cluster"
+                CLUSTER_NAME = "msdemo_dev_eks"
                 KUBECONFIG   = "${WORKSPACE}/kubeconfig"
                 HELM_RELEASE = "microservices-demo"
                 NAMESPACE    = "microservices-demo"
