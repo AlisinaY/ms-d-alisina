@@ -171,7 +171,7 @@ resource "aws_iam_role" "msdemo_dev_external_secrets_role" {
   })
 }
 
-
+# ---- -----
 resource "aws_iam_role_policy_attachment" "msdemo_dev_external_secrets_access" {
   role       = aws_iam_role.msdemo_dev_external_secrets_role.name
   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
