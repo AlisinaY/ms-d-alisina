@@ -155,23 +155,25 @@ resource "aws_iam_role" "msdemo_dev_external_secrets_role" {
   name = "msdemo-dev-external-secrets-role"
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow"
-      Action = "sts:AssumeRoleWithWebIdentity"
+      Effect = "Allow",
+      Action = "sts:AssumeRoleWithWebIdentity",
       Principal = {
-        Federated = aws_iam_openid_connect_provider.msdemo_dev_eks_oidc.arn
-      }
+        Federated = "arn:aws:iam::610351333224:oidc-provider/oidc.eks.eu-central-1.amazonaws.com/id/CCA00DF5390F6E426B9F5DFEDFFF5F3B"
+      },
       Condition = {
         StringEquals = {
-          "${replace(aws_iam_openid_connect_provider.msdemo_dev_eks_oidc.url, "https://", "")}:sub" = "system:serviceaccount:external-secrets:external-secrets-sa"
+          "oidc.eks.eu-central-1.amazonaws.com/id/CCA00DF5390F6E426B9F5DFEDFFF5F3B:sub" = "system:serviceaccount:external-secrets:external-secrets-sa"
         }
       }
     }]
   })
 }
 
+
 resource "aws_iam_role_policy_attachment" "msdemo_dev_external_secrets_access" {
   role       = aws_iam_role.msdemo_dev_external_secrets_role.name
   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
 }
+
