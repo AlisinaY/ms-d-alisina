@@ -169,11 +169,11 @@ pipeline {
                        kubectl apply -f ./charts/external-secrets/templates/serviceaccount.yaml
                        kubectl apply -f ./charts/external-secrets/templates/ClusterSecretStore.yaml
 
-                       # 4. ExternalSecret anlegen (Namespace vorher erstellen, falls nicht vorhanden)
+                       # 4. ExternalSecret anlegen
                        kubectl create namespace microservices-demo --dry-run=client -o yaml | kubectl apply -f -
                        kubectl apply -f ./charts/external-secrets/templates/externalsecret.yaml -n microservices-demo
 
-                       # 5. Helm Chart (optional, wenn du dein eigenes Chart hast)
+                       # 5. Helm Chart 
                        helm upgrade --install $HELM_RELEASE ./charts/external-secrets \
                        --namespace $NAMESPACE \
                        --create-namespace \
