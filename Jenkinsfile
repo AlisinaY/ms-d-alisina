@@ -155,24 +155,30 @@ pipeline {
 
                         # Install CRDs first
                     
-                        # Install External Secrets Operator using Helm
-                        helm repo add external-secrets https://charts.external-secrets.io
-                        helm repo update 
-                        helm install external-secrets external-secrets/external-secrets \
-                        -n external-secrets --create-namespace
+                       # 1. Add Helm repo + install External Secrets Operator
+                       helm repo add external-secrets https://charts.external-secrets.io
+                       helm repo update 
+                       helm install external-secrets external-secrets/external-secrets \
+                       -n external-secrets --create-namespace
 
-                        # Serviceaccount + ClusterSecretStore
-                        kubectl apply -f ./charts/external-secrets/templates/serviceaccount.yaml
-                        kubectl apply -f ./charts/external-secrets/templates/ClusterSecretStore.yaml
+                       # 2. Warten, bis der Webhook bereit ist
+                       echo "⏳ Warte auf Webhook Deployment..."
+                       kubectl rollout status deployment external-secrets-webhook -n external-secrets --timeout=120s
 
-                        # ExternalSecret
-                        kubectl apply -f ./charts/external-secrets/templates/externalsecret.yaml -n microservices-demo --create-namespace
+                       # 3. ServiceAccount & ClusterSecretStore anwenden
+                       kubectl apply -f ./charts/external-secrets/templates/serviceaccount.yaml
+                       kubectl apply -f ./charts/external-secrets/templates/ClusterSecretStore.yaml
 
-                        # Helm deploy
-                        helm upgrade --install $HELM_RELEASE ./charts/external-secrets \
-                            --namespace $NAMESPACE \
-                            --create-namespace \
-                            --kubeconfig $KUBECONFIG
+                       # 4. ExternalSecret anlegen (Namespace vorher erstellen, falls nicht vorhanden)
+                       kubectl create namespace microservices-demo --dry-run=client -o yaml | kubectl apply -f -
+                       kubectl apply -f ./charts/external-secrets/templates/externalsecret.yaml -n microservices-demo
+
+                       # 5. Helm Chart (optional, wenn du dein eigenes Chart hast)
+                       helm upgrade --install $HELM_RELEASE ./charts/external-secrets \
+                       --namespace $NAMESPACE \
+                       --create-namespace \
+                       --kubeconfig $KUBECONFIG
+
                     '''
                 }
             }
