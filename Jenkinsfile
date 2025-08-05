@@ -154,9 +154,8 @@ pipeline {
                         kubectl --kubeconfig=$KUBECONFIG get nodes
 
                         # Install CRDs first
-                        kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/config/crds/bases/externalsecrets.external-secrets.io_clustersecretstores.yaml
-                        kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/config/crds/bases/externalsecrets.external-secrets.io_externalsecrets.yaml
-
+                        kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/config/crds/crds.yaml
+          
                         # Install External Secrets Operator using Helm
                         helm repo add external-secrets https://charts.external-secrets.io
                         helm repo update 
