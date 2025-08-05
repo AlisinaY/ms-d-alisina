@@ -153,8 +153,25 @@ pipeline {
                         # Test connection
                         kubectl --kubeconfig=$KUBECONFIG get nodes
 
+                        # Install CRDs first
+                        kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/config/crds/bases/externalsecrets.external-secrets.io_clustersecretstores.yaml
+                        kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/config/crds/bases/externalsecrets.external-secrets.io_externalsecrets.yaml
+
+                        # Install External Secrets Operator using Helm
+                        helm repo add external-secrets https://charts.external-secrets.io
+                        helm repo update 
+                        helm install external-secrets external-secrets/external-secrets \
+                        -n external-secrets --create-namespace
+
+                        # Serviceaccount + ClusterSecretStore
+                        kubectl apply -f ./charts/external-secrets/templates/serviceaccount.yaml
+                        kubectl apply -f ./charts/external-secrets/templates/ClusterSecretStore.yaml
+
+                        # ExternalSecret
+                        kubectl apply -f ./charts/external-secrets/templates/externalsecret.yaml -n microservices-demo --create-namespace
+
                         # Helm deploy
-                        helm upgrade $HELM_RELEASE ./charts \
+                        helm upgrade --install $HELM_RELEASE ./charts/external-secrets \
                             --namespace $NAMESPACE \
                             --create-namespace \
                             --kubeconfig $KUBECONFIG
