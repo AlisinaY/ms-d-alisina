@@ -79,7 +79,7 @@ else
 fi
 
 
-if ! kubectl get externalsecret my-secret -n "$NAMESPACE" >/dev/null 2>&1; then
+if ! kubectl get externalsecret app-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
     echo "➡️ Erstelle ExternalSecret..."
     kubectl create -f ./charts/external-secrets/templates/externalsecret.yaml -n "$NAMESPACE"
 else
