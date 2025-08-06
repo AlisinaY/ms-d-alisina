@@ -33,21 +33,57 @@ aws eks update-kubeconfig \
 kubectl --kubeconfig=$KUBECONFIG get nodes
 
 # External Secrets Operator installieren
-helm repo add external-secrets https://charts.external-secrets.io
-helm repo update 
-helm install external-secrets external-secrets/external-secrets \
-    -n external-secrets --create-namespace
+if ! helm repo list | grep -q '^external-secrets'; then
+    echo "Helm Repo 'external-secrets' wird hinzugefügt..."
+    helm repo add external-secrets https://charts.external-secrets.io
+else 
+    echo "Helm Repo 'external-secrets' ist bereits vorhanden."
+fi
+
+helm repo update
+
+# Helm Release nur installieren, wenn noch nicht vorhanden
+if ! helm list -n external-secrets | grep -q '^external-secrets'; then 
+    echo "Installiere Helm Release 'external-secrets'..."
+    helm install external-secrets external-secrets/external-secrets \
+         -n external-secrets --create-namespace
+else 
+    echo "Helm Release 'external-secrets' ist bereits installiert." 
+fi            
 
 # Auf Webhook warten
 echo "⏳ Warte auf Webhook Deployment..."
 kubectl rollout status deployment external-secrets-webhook -n external-secrets --timeout=120s
 
-# ServiceAccount, ClusterSecretStore, ExternalSecret anwenden
-kubectl apply -f ./charts/external-secrets/templates/serviceaccount.yaml
-kubectl apply -f ./charts/external-secrets/templates/ClusterSecretStore.yaml
+# Namespace erstellen wenn nicht vorhanden
+if ! kubectl get namespace "$NAMESPACE" >/dev/null 2>&1; then
+    echo "Erstellen NameSpace '$NAMESPACE'..."
+    kubectl create namespace "$NAMESPACE"
+else
+    echo "Namespace '$NAMESPACE' existiert bereits."
+fi 
 
-kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -f ./charts/external-secrets/templates/externalsecret.yaml -n $NAMESPACE
+if ! kubectl get serviceaccount external-secrets-sa -n external-secrets >/dev/null 2>&1; then
+     echo "Erstelle Serviceaccount..."
+
+     kubectl apply -f ./charts/external-secrets/templates/serviceaccount.yaml
+else 
+    echo "Serviceaccont existiert schon."
+fi
+
+if ! kubectl get clustersecretstore external-secrets-store >/dev/null 2>&1; then
+    echo "➡️ Erstelle ClusterSecretStore..."
+    kubectl create -f ./charts/external-secrets/templates/ClusterSecretStore.yaml
+else
+    echo "✅ ClusterSecretStore existiert bereits."
+fi
+
+if ! kubectl get externalsecret my-secret -n "$NAMESPACE" >/dev/null 2>&1; then
+    echo "➡️ Erstelle ExternalSecret..."
+    kubectl create -f ./charts/external-secrets/templates/externalsecret.yaml -n "$NAMESPACE"
+else
+    echo "✅ ExternalSecret existiert bereits."
+fi
 
 # Microservices Helm Chart deployen
 helm upgrade --install $HELM_RELEASE ./charts/external-secrets \
