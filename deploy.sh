@@ -71,12 +71,13 @@ else
     echo "Serviceaccont existiert schon."
 fi
 
-if ! kubectl get clustersecretstore external-secrets-store >/dev/null 2>&1; then
+if ! kubectl get clustersecretstore aws-secrets-store >/dev/null 2>&1; then
     echo "➡️ Erstelle ClusterSecretStore..."
     kubectl create -f ./charts/external-secrets/templates/ClusterSecretStore.yaml
 else
-    echo "✅ ClusterSecretStore existiert bereits."
+    echo "✅ ClusterSecretStore 'aws-secrets-store' existiert bereits."
 fi
+
 
 if ! kubectl get externalsecret my-secret -n "$NAMESPACE" >/dev/null 2>&1; then
     echo "➡️ Erstelle ExternalSecret..."
