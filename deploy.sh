@@ -85,9 +85,14 @@ else
     echo "✅ ExternalSecret existiert bereits."
 fi
 
-# Microservices Helm Chart deployen
-helm upgrade --install $HELM_RELEASE ./charts/external-secrets \
-    --namespace $NAMESPACE \
-    --create-namespace \
-    --kubeconfig $KUBECONFIG
 
+
+if ! helm status "$HELM_RELEASE" -n "$NAMESPACE" >/dev/null 2>&1; then
+    echo "🚀 Installiere Helm-Release '$HELM_RELEASE'..."
+    helm install "$HELM_RELEASE" ./charts/external-secrets \
+        --namespace "$NAMESPACE" \
+        --create-namespace \
+        --kubeconfig "$KUBECONFIG"
+else
+    echo "✅ Helm-Release '$HELM_RELEASE' existiert bereits. Nichts zu tun."
+fi
