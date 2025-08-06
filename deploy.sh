@@ -66,14 +66,14 @@ fi
 if ! kubectl get serviceaccount external-secrets-sa -n external-secrets >/dev/null 2>&1; then
      echo "Erstelle Serviceaccount..."
 
-     kubectl apply -f ./charts/external-secrets/templates/serviceaccount.yaml
+     kubectl apply -f ./charts/external-secrets/serviceaccount.yaml
 else 
     echo "Serviceaccont existiert schon."
 fi
 
 if ! kubectl get clustersecretstore aws-secrets-store >/dev/null 2>&1; then
     echo "➡️ Erstelle ClusterSecretStore..."
-    kubectl create -f ./charts/external-secrets/templates/ClusterSecretStore.yaml
+    kubectl create -f ./charts/external-secrets/ClusterSecretStore.yaml
 else
     echo "✅ ClusterSecretStore 'aws-secrets-store' existiert bereits."
 fi
@@ -81,7 +81,7 @@ fi
 
 if ! kubectl get externalsecret app-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
     echo "➡️ Erstelle ExternalSecret..."
-    kubectl create -f ./charts/external-secrets/templates/externalsecret.yaml -n "$NAMESPACE"
+    kubectl create -f ./charts/external-secrets/externalsecret.yaml -n "$NAMESPACE"
 else
     echo "✅ ExternalSecret existiert bereits."
 fi
@@ -90,7 +90,7 @@ fi
 
 if ! helm status "$HELM_RELEASE" -n "$NAMESPACE" >/dev/null 2>&1; then
     echo "🚀 Installiere Helm-Release '$HELM_RELEASE'..."
-    helm install "$HELM_RELEASE" ./charts/external-secrets \
+    helm install "$HELM_RELEASE" ./charts \
         --namespace "$NAMESPACE" \
         --create-namespace \
         --kubeconfig "$KUBECONFIG"
