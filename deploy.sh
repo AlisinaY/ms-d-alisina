@@ -90,7 +90,7 @@ fi
 
 if ! helm status "$HELM_RELEASE" -n "$NAMESPACE" >/dev/null 2>&1; then
     echo "🚀 Installiere Helm-Release '$HELM_RELEASE'..."
-    helm install "$HELM_RELEASE" ./charts \
+    helm upgrade --install "$HELM_RELEASE" ./charts \
         --namespace "$NAMESPACE" \
         --create-namespace \
         --kubeconfig "$KUBECONFIG"
