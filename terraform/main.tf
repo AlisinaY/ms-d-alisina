@@ -138,42 +138,58 @@ module "vpc" {
 # --------------------------------------------
 # OIDC PROVIDER FOR IRSA
 # --------------------------------------------
+# OIDC vom Cluster ableiten (du nutzt ja bereits aws_eks_cluster.msdemo_dev_eks)
+locals {
+  oidc_url      = aws_eks_cluster.msdemo_dev_eks.identity[0].oidc[0].issuer         # https://oidc.eks.eu-central-1.amazonaws.com/id/XXXX
+  oidc_hostpath = replace(local.oidc_url, "https://", "")                            # oidc.eks.eu-central-1.amazonaws.com/id/XXXX
+}
+
 data "tls_certificate" "msdemo_dev_eks" {
-  url = aws_eks_cluster.msdemo_dev_eks.identity[0].oidc[0].issuer
+  url = local.oidc_url
 }
 
 resource "aws_iam_openid_connect_provider" "msdemo_dev_eks_oidc" {
-  url             = aws_eks_cluster.msdemo_dev_eks.identity[0].oidc[0].issuer
+  url             = local.oidc_url
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.msdemo_dev_eks.certificates[0].sha1_fingerprint]
 }
 
-# --------------------------------------------
-# EXTERNAL SECRETS IAM ROLE
-# --------------------------------------------
 resource "aws_iam_role" "msdemo_dev_external_secrets_role" {
   name = "msdemo-dev-external-secrets-role"
 
+  # WICHTIG: Principal.Federated -> auf den hier erstellten OIDC-Provider verweisen
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
-      Action = "sts:AssumeRoleWithWebIdentity",
+      Effect   = "Allow",
+      Action   = "sts:AssumeRoleWithWebIdentity",
       Principal = {
-        Federated = "arn:aws:iam::610351333224:oidc-provider/oidc.eks.eu-central-1.amazonaws.com/id/CCA00DF5390F6E426B9F5DFEDFFF5F3B"
+        Federated = aws_iam_openid_connect_provider.msdemo_dev_eks_oidc.arn
       },
       Condition = {
         StringEquals = {
-          "oidc.eks.eu-central-1.amazonaws.com/id/CCA00DF5390F6E426B9F5DFEDFFF5F3B:sub" = "system:serviceaccount:external-secrets:external-secrets-sa"
+          # Beide Bedingungen setzen: aud + sub
+          "${local.oidc_hostpath}:aud" = "sts.amazonaws.com",
+          "${local.oidc_hostpath}:sub" = "system:serviceaccount:external-secrets:external-secrets-sa"
         }
       }
     }]
   })
 }
 
-# ---- -----
-resource "aws_iam_role_policy_attachment" "msdemo_dev_external_secrets_access" {
-  role       = aws_iam_role.msdemo_dev_external_secrets_role.name
-  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+# Für reines Lesen genügt eine minimalere Policy.
+# (Deine Attach-Variante mit SecretsManagerReadWrite funktioniert zwar, ist aber sehr weitreichend.)
+resource "aws_iam_role_policy" "msdemo_dev_external_secrets_read" {
+  name = "eso-secretsmanager-read"
+  role = aws_iam_role.msdemo_dev_external_secrets_role.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect   = "Allow",
+      Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"],
+      Resource = "arn:aws:secretsmanager:eu-central-1:${data.aws_caller_identity.current.account_id}:secret:app-secrets*"
+    }]
+  })
 }
 
+data "aws_caller_identity" "current" {}
