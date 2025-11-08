@@ -81,4 +81,3 @@ Neue Jenkins Pipeline, die:
 👨‍💻 Autor
 
 - Ali Sina Yozbashi
-- Junior DevOps Engineer
