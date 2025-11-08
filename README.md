@@ -50,23 +50,6 @@ Neue Jenkins Pipeline, die:
 - ├── Dockerfile # Root Dockerfile
 - └── README.md # Diese Datei
 
-# ⚙️ Setup
-
-1️⃣ Infrastruktur Provisionieren
-
-- cd terraform
-- terraform init
-- terraform apply
-
-2️⃣ Jenkins-Pipeline starten
-
-# Siehe Jenkinsfile im Root-Verzeichnis
-
-3️⃣ Deploy zu Kubernetes (EKS)
-
-- aws eks update-kubeconfig --region eu-central-1 --name - my-eks-cluster
-- kubectl apply -f k8s/microservices-demo.yml
-
 # 🛠 Verwendete Technologien
 
 - Tool/Service Beschreibung
